@@ -1,0 +1,148 @@
+@{
+    ViewData["Title"] = "Canlı Harita";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+    /* Harita tüm ekranı kaplasın */
+    #map {
+        height: 85vh; /* Navbar ve Footer payı */
+        width: 100%;
+        border-radius: 20px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        border: 2px solid rgba(255,255,255,0.1);
+        z-index: 1;
+    }
+    
+    /* Kullanıcı Avatarı (Harita Üzerindeki Yuvarlak Resim) */
+    .custom-marker-icon {
+        border-radius: 50%;
+        border: 3px solid #0d6efd; /* Mavi Çerçeve */
+        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        transition: transform 0.3s;
+        background: #fff;
+    }
+    .custom-marker-icon:hover {
+        transform: scale(1.2);
+        z-index: 999 !important;
+        border-color: #ffc107; /* Hoverda sarı olsun */
+    }
+</style>
+
+<div class="container-fluid px-4" style="padding-top: 100px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-white fw-bold"><i class="fas fa-map-marked-alt me-2 text-primary"></i>Canlı Harita</h2>
+        <a asp-controller="Social" asp-action="Index" class="btn btn-outline-light rounded-pill"><i class="fas fa-list me-2"></i>Listeye Dön</a>
+    </div>
+
+    <div id="map"></div>
+    
+    <div class="alert alert-dark bg-dark text-white-50 border-secondary mt-3 d-flex align-items-center">
+        <i class="fas fa-info-circle fa-2x me-3"></i>
+        <div>
+            <strong>Nasıl Çalışır?</strong> Konum izni verdiğinde haritada görünürsün. Sadece son 24 saatte aktif olanlar gözükür.
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // 1. Haritayı Başlat (Başlangıçta Türkiye merkezli)
+    var map = L.map('map').setView([39.9334, 32.8597], 6);
+
+    // 2. Harita Teması (Koyu Mod - Dark Matter)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+
+    // 3. Kullanıcının Konumunu Al
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(success, error);
+    } else {
+        alert("Tarayıcınız konum servisini desteklemiyor.");
+    }
+
+    // Konum Bulununca Çalışan Fonksiyon
+    function success(position) {
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+
+        // Haritayı kullanıcının olduğu yere odakla
+        map.setView([lat, lng], 13);
+
+        // A) Kendi Marker'ımızı Ekle (Sen Buradasın)
+        var myIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background-color: #e74c3c; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #e74c3c;"></div>`,
+            iconSize: [15, 15],
+            iconAnchor: [7, 7]
+        });
+
+        L.marker([lat, lng], {icon: myIcon}).addTo(map)
+            .bindPopup("<b>📍 Sen Buradasın</b>")
+            .openPopup();
+
+        // B) Konumu Veritabanına Kaydet
+        fetch('/Social/UpdateLocation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat: lat, lng: lng })
+        });
+
+        // C) Diğer Kullanıcıları Getir
+        loadOtherUsers();
+    }
+
+    function error() {
+        alert("Konum izni verilmediği için harita özelliği kısıtlı çalışacak. 😔");
+        loadOtherUsers(); // İzin vermese de diğerlerini görsün
+    }
+
+    // Diğer Kullanıcıları Haritaya Ekle
+    function loadOtherUsers() {
+        fetch('/Social/GetMapUsers')
+            .then(res => res.json())
+            .then(users => {
+                users.forEach(user => {
+                    // Profil resmi yoksa varsayılan avatar
+                    var pic = (user.profilePicture && user.profilePicture !== "null") 
+                              ? user.profilePicture 
+                              : `https://ui-avatars.com/api/?name=${user.username}&background=random`;
+
+                    // Özel İkon (Yuvarlak Profil Resmi)
+                    var userIcon = L.icon({
+                        iconUrl: pic,
+                        iconSize: [50, 50], // Avatar boyutu
+                        iconAnchor: [25, 25], // Merkeze oturt
+                        className: 'custom-marker-icon' // CSS sınıfı
+                    });
+
+                    // Marker Ekle
+                    var marker = L.marker([user.lat, user.lng], { icon: userIcon }).addTo(map);
+                    
+                    // Tıklayınca Çıkan Baloncuk
+                    var popupContent = `
+                        <div class="text-center">
+                            <h6 class="fw-bold mb-1">${user.username}</h6>
+                            <button onclick="startChatFromMap('${user.username}')" class="btn btn-primary btn-sm rounded-pill py-0 mt-1" style="font-size: 10px;">Mesaj At 💬</button>
+                        </div>
+                    `;
+                    marker.bindPopup(popupContent);
+                });
+            });
+    }
+
+    // Haritadan Sohbet Başlatma (Layout'taki çekmeceyi açar)
+    function startChatFromMap(username) {
+        if(window.parent.openChatDrawer) {
+            window.parent.openChatDrawer(username);
+        } else {
+            alert("Sohbet özelliği yüklenemedi.");
+        }
+    }
+</script>

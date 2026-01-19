@@ -1,0 +1,218 @@
+@{
+    ViewData["Title"] = "Giriş Yap";
+    Layout = null; /* Tam ekran deneyimi için Layout kullanmıyoruz */
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Giriş Yap - HavamaGore</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <style>
+        body {
+            background-color: #2F4F4F; /* Kartın solundaki renk ile uyumlu arka plan */
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            overflow: hidden; /* Giriş animasyonu sırasında scroll çıkmasın */
+            height: 100vh;
+        }
+
+        /* --- 1. GİRİŞ ANİMASYONU KATMANI --- */
+        #introOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #3b638e; /* Animasyonun arka planı */
+            z-index: 9999; /* En üstte duracak */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1); /* Yukarı kayma efekti */
+        }
+
+        .anim-text {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 2rem;
+            display: inline-block;
+        }
+
+        .char { display: inline-block; transform-origin: bottom center; }
+
+        .start-btn {
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            opacity: 0; /* Başlangıçta gizli JS ile gelecek */
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            background: white;
+            color: black;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* --- 2. LOGİN KARTI VE ARKAPLAN --- */
+        #loginContainer {
+            opacity: 0; /* Animasyon bitene kadar gizli */
+            transition: opacity 1.5s ease;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Arka plan görseli (Opsiyonel: Tavşanlı temaya uygun doğa resmi) */
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2551&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px); /* Buzlu cam etkisi */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+        }
+
+        /* Form elemanları için stil */
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-color: #a8c0ff;
+            box-shadow: none;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.4); }
+    </style>
+</head>
+<body>
+
+    <div id="introOverlay">
+        <h2 class="anim-text" id="questionText">Bugün Havan Nasıl?</h2>
+        <button class="start-btn" onclick="openLogin()" id="startBtn">
+            Haydi Başlayalım <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+
+    <div id="loginContainer">
+        <div class="glass-card overflow-hidden shadow-lg" style="width: 900px; max-width: 95%;">
+            <div class="row g-0">
+                
+                <div class="col-md-6 d-none d-md-block" style="background-color: #2F4F4F;">
+                    <img src="~/img/rabbit.gif" class="w-100 h-100" style="object-fit: cover; min-height: 500px;" alt="Yağmurda Tavşan">
+                </div>
+
+                <div class="col-md-6 p-5 d-flex flex-column justify-content-center">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-white mb-2">HavamaGore 🌧️</h2>
+                        <p class="small text-white-50">Havanın ritmine kapılmaya hazır mısın?</p>
+                    </div>
+
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger py-2 small rounded-3 text-center">@ViewBag.Error</div>
+                    }
+
+                    <form asp-action="Login" method="post">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-white-50 ms-2">Kullanıcı Adı</label>
+                            <input type="text" name="username" class="form-control" placeholder="Örn: zehra" required />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-white-50 ms-2">Şifre</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••" required />
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm fw-bold py-2">
+                            Giriş Yap ✨
+                        </button>
+                    </form>
+
+                    <div class="mt-4 text-center small text-white-50">
+                        Hesabın yok mu? <a asp-action="Register" class="fw-bold text-white text-decoration-underline">Hemen Kayıt Ol</a>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Yazıyı harflere böl
+            const textWrapper = document.querySelector('#questionText');
+            textWrapper.innerHTML = textWrapper.textContent.replace(/\S/g, "<span class='char'>$&</span>");
+
+            // 2. Harfleri Animasyonla Oynat
+            anime.timeline({loop: true})
+            .add({
+                targets: '.char',
+                translateY: [
+                    { value: -50, duration: 600, easing: 'easeOutExpo' }, 
+                    { value: 0, duration: 800, easing: 'easeOutBounce' }
+                ],
+                rotate: {
+                    value: [-360, 0],
+                    duration: 1000,
+                    easing: 'easeInOutCirc'
+                },
+                scale: [
+                    {value: 0.5, duration: 100, easing: 'easeOutExpo'},
+                    {value: 1, duration: 900}
+                ],
+                delay: anime.stagger(100), // Dalga efekti
+            })
+            .add({ duration: 1500 }); // Bekleme süresi
+
+            // 3. Butonu yavaşça getir
+            anime({
+                targets: '#startBtn',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                delay: 1500,
+                duration: 1000,
+                easing: 'easeOutExpo'
+            });
+        });
+
+        // 4. "Haydi Başlayalım" butonuna basınca
+        function openLogin() {
+            const intro = document.getElementById('introOverlay');
+            const loginArea = document.getElementById('loginContainer');
+
+            // Intro yukarı kaysın
+            intro.style.transform = "translateY(-100%)";
+            
+            // Login alanı yavaşça belirmesi için
+            setTimeout(() => {
+                loginArea.style.opacity = "1";
+            }, 500);
+        }
+    </script>
+
+</body>
+</html>

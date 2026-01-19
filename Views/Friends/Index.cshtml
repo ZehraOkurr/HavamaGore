@@ -1,0 +1,83 @@
+@model List<HavamaGore.Models.User>
+
+@{
+    ViewData["Title"] = "Arkadaşlarım";
+}
+
+<div class="container" style="padding-top: 130px;">
+    
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-white">Arkadaşlarım (@Model.Count)</h1>
+        <p class="text-white-50">Senin kabilen burası.</p>
+    </div>
+
+    @if (Model.Count > 0)
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var user in Model)
+            {
+                var pic = string.IsNullOrEmpty(user.ProfilePicture) ? $"https://ui-avatars.com/api/?name={user.Username}&background=random" : user.ProfilePicture;
+                
+                <div class="col friend-card-col">
+                    <div class="glass-card p-4 text-center position-relative group-hover-effect">
+                        
+                        <img src="@pic" class="rounded-circle shadow-lg mb-3 border border-3 border-secondary" width="100" height="100" style="object-fit:cover;">
+                        
+                        <h4 class="fw-bold text-white mb-1">@user.Username</h4>
+                        <p class="text-white-50 small mb-4"><i class="fas fa-map-marker-alt me-1"></i> @(user.City ?? "Bilinmiyor")</p>
+
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-primary rounded-pill px-4" onclick="startChat('@user.Username')">
+                                <i class="fas fa-comment-dots me-2"></i>Mesaj
+                            </button>
+                            
+                            <button class="btn btn-outline-danger rounded-circle" onclick="removeFriend('@user.Username', this)" title="Arkadaşlardan Çıkar">
+                                <i class="fas fa-user-minus"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-white-50 py-5">
+            <i class="fas fa-user-friends fa-4x mb-3 opacity-50"></i>
+            <h3>Henüz kimse yok.</h3>
+            <a asp-controller="Social" asp-action="Index" class="btn btn-light rounded-pill px-4 mt-3 fw-bold">Topluluğa Git</a>
+        </div>
+    }
+</div>
+
+<script>
+    // Mesajlaşma (Drawer'ı açar)
+    function startChat(username) {
+        // Layout'taki global fonksiyonu çağırıyoruz
+        if(window.openChatDrawer) {
+            window.openChatDrawer(username);
+        } else {
+            alert("Sohbet yüklenemedi, sayfayı yenileyin.");
+        }
+    }
+
+    // Arkadaş Silme
+    function removeFriend(username, btn) {
+        if(!confirm(username + " adlı kişiyi arkadaşlardan çıkarmak istediğine emin misin?")) return;
+
+        fetch('/Friends/RemoveFriend?username=' + username, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    // Kartı animasyonla sil
+                    const col = btn.closest('.friend-card-col');
+                    col.style.transition = 'all 0.5s';
+                    col.style.transform = 'scale(0)';
+                    setTimeout(() => col.remove(), 500);
+                } else {
+                    alert("Hata oluştu.");
+                }
+            });
+    }
+</script>

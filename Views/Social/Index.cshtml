@@ -1,0 +1,145 @@
+@model HavamaGore.Models.SocialViewModel
+@{
+    ViewData["Title"] = "Keşfet";
+}
+
+<div class="container py-5" style="margin-top: 80px;">
+    <div class="row g-5">
+        
+        <div class="col-lg-8">
+            <h4 class="fw-bold text-white mb-4"><i class="fas fa-stream me-2 text-warning"></i>Arkadaşların Ne Yapıyor?</h4>
+            
+            @if (Model.Feed.Count == 0)
+            {
+                <div class="card bg-dark text-white border-secondary p-5 text-center shadow-lg rounded-4">
+                    <i class="fas fa-wind fa-3x text-white-50 mb-3"></i>
+                    <h5>Burada yaprak kımıldamıyor... 🍂</h5>
+                    <p class="text-white-50">Arkadaşların henüz bir mood paylaşmamış veya hiç arkadaşın yok.</p>
+                </div>
+            }
+            else
+            {
+                foreach (var item in Model.Feed)
+                {
+                    // Mood Rengi ve İkonu Seçimi
+                    string moodColor = "primary";
+                    string moodIcon = "music";
+                    if(item.Mood.Contains("acoustic") || item.Mood.Contains("piano")) { moodColor="info"; moodIcon="coffee"; }
+                    else if(item.Mood.Contains("party") || item.Mood.Contains("summer")) { moodColor="warning"; moodIcon="bolt"; }
+                    else if(item.Mood.Contains("chill")) { moodColor="success"; moodIcon="couch"; }
+
+                    <div class="card bg-dark text-white border-0 shadow mb-3 hover-scale" style="background: linear-gradient(145deg, #1a1a1a, #252525); border-radius: 15px;">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start">
+                                <img src="@item.ProfilePicture" class="rounded-circle border border-2 border-secondary me-3" width="60" height="60" style="object-fit: cover;">
+                                
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="fw-bold mb-0">@item.Username</h5>
+                                        <small class="text-white-50"><i class="far fa-clock me-1"></i>@item.TimeAgo</small>
+                                    </div>
+                                    
+                                    <p class="mb-3 text-light">
+                                        Şu an <strong>@item.City</strong> şehrinde, 
+                                        <span class="badge bg-secondary text-light">@item.Weather</span> havasında takılıyor.
+                                    </p>
+
+                                    <div class="d-flex align-items-center justify-content-between bg-black bg-opacity-25 p-3 rounded-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle bg-@moodColor p-2 me-3 text-dark d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-@moodIcon"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-white-50 d-block">Şu anki Modu</small>
+                                                <strong class="text-uppercase text-@moodColor">@item.Mood</strong>
+                                            </div>
+                                        </div>
+                                        
+                                        <button class="btn btn-sm btn-outline-light rounded-pill px-3" 
+                                                onclick="openSuggestionChat('@item.Username', '@item.Mood')">
+                                            <i class="far fa-comment-dots me-2"></i>Öneri Yap
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 100px;">
+                <div class="card bg-black bg-opacity-50 text-white border-0 shadow-lg rounded-4">
+                    <div class="card-header bg-transparent border-bottom border-secondary py-3">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-user-plus me-2 text-primary"></i>Kimi Takip Etmeli?</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush rounded-bottom-4">
+                            @foreach (var user in Model.SuggestedUsers)
+                            {
+                                string pic = !string.IsNullOrEmpty(user.ProfilePicture) ? user.ProfilePicture : $"https://ui-avatars.com/api/?name={user.Username}&background=random";
+                                <div class="list-group-item bg-transparent text-white border-secondary p-3 d-flex align-items-center">
+                                    <img src="@pic" class="rounded-circle me-3" width="45" height="45">
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <h6 class="mb-0 fw-bold text-truncate">@user.Username</h6>
+                                        <small class="text-white-50"><i class="fas fa-map-pin me-1"></i>@(user.City ?? "Dünya")</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-primary rounded-circle shadow" onclick="addFriend('@user.FriendCode')" title="Ekle">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 text-center py-3">
+                        <small class="text-white-50">Arkadaş eklemek için kod kullanabilirsin.</small>
+                    </div>
+                </div>
+                
+                <div class="card bg-dark text-white border-secondary mt-4 shadow rounded-4">
+                    <div class="card-body">
+                        <label class="small text-white-50 mb-2">Arkadaş Kodu ile Ekle</label>
+                        <div class="input-group">
+                            <input type="text" id="friendCodeInput" class="form-control bg-black text-white border-secondary" placeholder="KOD..." maxlength="6">
+                            <button class="btn btn-success" onclick="addFriendManual()"><i class="fas fa-check"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sohbet Çekmecesini Aç ve Otomatik Mesaj Yaz
+    function openSuggestionChat(username, mood) {
+        // Layout'taki global fonksiyonu çağırıyoruz
+        if (typeof openChatDrawer === "function") {
+            openChatDrawer(username);
+            
+            // Input alanına otomatik yazı yazdıralım
+            setTimeout(() => {
+                const input = document.getElementById('drawerInput');
+                if(input) {
+                    input.value = `Selam! ${mood} modunda olduğunu gördüm, sana şunu önermek istedim: `;
+                    input.focus();
+                }
+            }, 500); // Drawer açılana kadar bekle
+        } else {
+            alert("Sohbet sistemi yüklenemedi.");
+        }
+    }
+
+    // Arkadaş Ekleme Fonksiyonları
+    function addFriend(code) {
+        fetch('/Friends/AddFriendByCode?code=' + code, { method: 'POST' })
+            .then(r => r.json())
+            .then(d => { alert(d.message); location.reload(); });
+    }
+
+    function addFriendManual() {
+        const code = document.getElementById('friendCodeInput').value;
+        if(code) addFriend(code);
+    }
+</script>

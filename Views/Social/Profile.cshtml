@@ -1,0 +1,91 @@
+@{
+    var user = ViewBag.UserProfile as HavamaGore.Models.User;
+    var movies = ViewBag.Movies as List<HavamaGore.Models.LibraryItem>;
+    var music = ViewBag.Music as List<HavamaGore.Models.LibraryItem>;
+    var books = ViewBag.Books as List<HavamaGore.Models.LibraryItem>;
+    var isMe = (bool)ViewBag.IsMe;
+}
+
+<div class="container" style="padding-top: 130px; padding-bottom: 50px;">
+
+    <div class="glass-card p-5 mb-5 text-center position-relative overflow-hidden border border-light border-opacity-25">
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(45deg, rgba(13,110,253,0.1), transparent); z-index: 0;"></div>
+        
+        <div class="position-relative" style="z-index: 1;">
+            <img src="https://ui-avatars.com/api/?name=@user.Username&background=random&size=150" class="rounded-circle shadow-lg mb-3 border border-4 border-white">
+            <h1 class="display-5 fw-bold text-white">@user.Username</h1>
+            <p class="text-white-50"><i class="fas fa-map-marker-alt me-1"></i> @user.City</p>
+            
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <div class="text-center px-3 border-end border-secondary">
+                    <h4 class="fw-bold text-white mb-0">@movies.Count</h4>
+                    <small class="text-white-50">Film</small>
+                </div>
+                <div class="text-center px-3 border-end border-secondary">
+                    <h4 class="fw-bold text-white mb-0">@music.Count</h4>
+                    <small class="text-white-50">Müzik</small>
+                </div>
+                <div class="text-center px-3">
+                    <h4 class="fw-bold text-white mb-0">@books.Count</h4>
+                    <small class="text-white-50">Kitap</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="text-white mb-4 fw-bold border-start border-4 border-warning ps-3">📂 @user.Username Kişisinin Koleksiyonu</h3>
+
+    @if (movies.Count == 0 && music.Count == 0 && books.Count == 0)
+    {
+        <div class="text-center text-white-50 py-5">
+            <h3>📭 Bomboş!</h3>
+            <p>Henüz hiçbir şey kaydetmemiş.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3">
+            
+            @foreach (var item in movies)
+            {
+                <div class="col">
+                    <div class="movie-card-modern position-relative" style="height: 250px;">
+                        <img src="@item.ImageUrl" class="w-100 h-100" style="object-fit: cover;">
+                        <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2 shadow">🎬 Film</span>
+                        <div class="p-2 position-absolute bottom-0 w-100 text-center" style="background: rgba(0,0,0,0.7);">
+                            <small class="text-white fw-bold text-truncate d-block">@item.Title</small>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @foreach (var item in music)
+            {
+                <div class="col">
+                    <div class="movie-card-modern position-relative" style="height: 250px;">
+                        <img src="@item.ImageUrl" class="w-100 h-100" style="object-fit: cover;">
+                        <span class="position-absolute top-0 start-0 badge bg-success m-2 shadow">🎧 Müzik</span>
+                        <div class="p-2 position-absolute bottom-0 w-100 text-center" style="background: rgba(0,0,0,0.7);">
+                            <small class="text-white fw-bold text-truncate d-block">@item.Title</small>
+                            <a href="@item.ExternalLink" target="_blank" class="text-success small"><i class="fab fa-spotify"></i> Dinle</a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @foreach (var item in books)
+            {
+                <div class="col">
+                    <div class="movie-card-modern position-relative" style="height: 250px;">
+                        <img src="@item.ImageUrl" class="w-100 h-100" style="object-fit: cover;">
+                        <span class="position-absolute top-0 start-0 badge bg-primary m-2 shadow">📖 Kitap</span>
+                        <div class="p-2 position-absolute bottom-0 w-100 text-center" style="background: rgba(0,0,0,0.7);">
+                            <small class="text-white fw-bold text-truncate d-block">@item.Title</small>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+</div>

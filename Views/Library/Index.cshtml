@@ -1,0 +1,138 @@
+@model List<HavamaGore.Models.LibraryItem>
+
+@{
+    ViewData["Title"] = "Kütüphanem";
+}
+
+<div class="container" style="padding-top: 130px; padding-bottom: 50px;">
+    
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-white text-shadow">📚 Kütüphanem</h1>
+        <p class="text-white-50 lead text-shadow">Kaydettiğin tüm güzellikler burada.</p>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mb-5">
+        <button class="btn btn-light rounded-pill px-4 fw-bold filter-btn active" onclick="filterItems('all', this)">Tümü</button>
+        <button class="btn btn-outline-light rounded-pill px-4 fw-bold filter-btn" onclick="filterItems('Movie', this)">🎬 Filmler</button>
+        <button class="btn btn-outline-light rounded-pill px-4 fw-bold filter-btn" onclick="filterItems('Music', this)">🎧 Müzikler</button>
+        <button class="btn btn-outline-light rounded-pill px-4 fw-bold filter-btn" onclick="filterItems('Book', this)">📖 Kitaplar</button>
+    </div>
+
+    @if (Model != null && Model.Count > 0)
+    {
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4" id="libraryGrid">
+            @foreach (var item in Model)
+            {
+                <div class="col library-item" data-type="@item.Type">
+                    <div class="glass-card h-100 position-relative group-hover-effect" style="overflow: hidden;">
+                        
+                        <button onclick="removeItem(@item.Id, this)" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 end-0 m-2 shadow delete-btn" title="Kaldır">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+
+                        <div style="height: 250px; overflow: hidden;">
+                            <img src="@item.ImageUrl" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
+                        </div>
+
+                        <div class="p-3 text-white">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="badge bg-secondary opacity-75">
+                                    @if(item.Type == "Movie") { <i class="fas fa-film me-1"></i> }
+                                    @if(item.Type == "Music") { <i class="fas fa-music me-1"></i> }
+                                    @if(item.Type == "Book") { <i class="fas fa-book me-1"></i> }
+                                    @item.Type
+                                </span>
+                                <small class="text-white-50" style="font-size: 10px;">@item.CreatedAt.ToString("dd.MM.yyyy")</small>
+                            </div>
+                            
+                            <h5 class="fw-bold text-truncate mb-1">@item.Title</h5>
+                            
+                            @if (!string.IsNullOrEmpty(item.Overview))
+                            {
+                                <p class="small text-white-50 text-truncate">@item.Overview</p>
+                            }
+
+                            @if (!string.IsNullOrEmpty(item.ExternalLink))
+                            {
+                                <a href="@item.ExternalLink" target="_blank" class="btn btn-outline-light btn-sm w-100 rounded-pill mt-2">
+                                    Kaynağa Git <i class="fas fa-external-link-alt ms-1"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-white-50 py-5">
+            <i class="far fa-folder-open fa-4x mb-3 opacity-50"></i>
+            <h3>Henüz bir şey eklemedin.</h3>
+            <p>Ana sayfaya dönüp keşfetmeye başla! 🚀</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary rounded-pill px-4 mt-3">Keşfet</a>
+        </div>
+    }
+</div>
+
+<script>
+    // 1. FİLTRELEME
+    function filterItems(type, btn) {
+        // Buton stillerini güncelle
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            b.classList.remove('btn-light', 'text-dark');
+            b.classList.add('btn-outline-light');
+        });
+        btn.classList.remove('btn-outline-light');
+        btn.classList.add('btn-light', 'text-dark');
+
+        // Kartları gizle/göster
+        const items = document.querySelectorAll('.library-item');
+        items.forEach(item => {
+            if (type === 'all' || item.dataset.type === type) {
+                item.style.display = 'block';
+                // Animasyonlu giriş
+                item.style.animation = 'fadeIn 0.5s ease';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // 2. SİLME İŞLEMİ
+    function removeItem(id, btn) {
+        if(!confirm("Bunu kütüphanenden silmek istediğine emin misin?")) return;
+
+        const cardCol = btn.closest('.col'); // Silinecek sütunu bul
+
+        fetch('/Library/RemoveItem?id=' + id, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Efektli silme
+                    cardCol.style.transition = "all 0.5s";
+                    cardCol.style.transform = "scale(0)";
+                    setTimeout(() => cardCol.remove(), 500);
+                } else {
+                    alert("Hata oluştu.");
+                }
+            });
+    }
+</script>
+
+<style>
+    /* Hover Efektleri */
+    .glass-card:hover img { transform: scale(1.1); }
+    
+    .delete-btn { 
+        opacity: 0; 
+        transition: opacity 0.3s; 
+        z-index: 10;
+    }
+    .glass-card:hover .delete-btn { opacity: 1; }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

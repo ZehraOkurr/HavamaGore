@@ -1,0 +1,185 @@
+@model HavamaGore.Models.User
+
+@{
+    ViewData["Title"] = "Profilim";
+    string profilePic = !string.IsNullOrEmpty(Model.ProfilePicture) ? Model.ProfilePicture : $"https://ui-avatars.com/api/?name={Model.Username}&background=random&size=256";
+}
+
+<div class="container py-5" style="margin-top: 80px;">
+    
+    <div class="row g-4">
+        
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-0 shadow-lg h-100" style="background: linear-gradient(145deg, #1e1e1e, #2c3e50); border-radius: 20px;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center">
+                    <div class="mb-4 position-relative d-inline-block mx-auto">
+                        <img src="@profilePic" class="rounded-circle border border-4 border-light shadow-lg hover-scale" style="width: 150px; height: 150px; object-fit: cover;">
+                        <button class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#editPhotoModal">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <h2 class="fw-bold mb-1">@Model.Username</h2>
+                    <p class="text-white-50 mb-4"><i class="fas fa-map-marker-alt me-1 text-danger"></i> @(Model.City ?? "Konum Yok")</p>
+
+                    <div class="d-flex justify-content-center gap-3 mb-4">
+                        <div class="bg-black bg-opacity-25 rounded-3 p-3 text-center flex-grow-1">
+                            <h4 class="fw-bold mb-0">@ViewBag.FriendCount</h4>
+                            <small class="text-white-50" style="font-size: 0.7rem;">ARKADAŞ</small>
+                        </div>
+                        <div class="bg-black bg-opacity-25 rounded-3 p-3 text-center flex-grow-1">
+                            <h4 class="fw-bold mb-0">@ViewBag.LibraryCount</h4>
+                            <small class="text-white-50" style="font-size: 0.7rem;">KÜTÜPHANE</small>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a asp-controller="Library" asp-action="Index" class="btn btn-light fw-bold rounded-pill"><i class="fas fa-book me-2"></i>Kütüphanem</a>
+                        <a asp-controller="Social" asp-action="Index" class="btn btn-outline-light fw-bold rounded-pill"><i class="fas fa-globe me-2"></i>Keşfet</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-0 shadow-lg h-100" style="border-radius: 20px;">
+                <div class="card-body p-5">
+                    
+                    <h4 class="fw-bold mb-4 border-bottom border-secondary pb-3"><i class="fas fa-chart-pie me-2 text-warning"></i> Mood Analizin</h4>
+                    
+                    <div class="row align-items-center mb-5">
+                        <div class="col-md-5">
+                            <canvas id="moodChart" style="max-height: 250px;"></canvas>
+                        </div>
+                        <div class="col-md-7">
+                            <h5 class="fw-bold mb-3">🏆 Senin Etiketlerin</h5>
+                            <div class="d-flex flex-column gap-2">
+                                @if(ViewBag.TopWeather != null && ViewBag.TopWeather.ToString().Contains("rain")) {
+                                    <div class="p-3 rounded-3 bg-primary bg-opacity-25 border border-primary text-white d-flex align-items-center">
+                                        <i class="fas fa-cloud-rain fa-2x me-3"></i>
+                                        <div><h6 class="mb-0 fw-bold">Yağmur Sever</h6><small>Yağmurlu havalarda daha aktifsin.</small></div>
+                                    </div>
+                                }
+                                else if(ViewBag.TopWeather != null && ViewBag.TopWeather.ToString().Contains("sun")) {
+                                    <div class="p-3 rounded-3 bg-warning bg-opacity-25 border border-warning text-white d-flex align-items-center">
+                                        <i class="fas fa-sun fa-2x me-3 text-warning"></i>
+                                        <div><h6 class="mb-0 fw-bold">Güneşin Çocuğu</h6><small>Güneşli havaların tadını çıkarıyorsun.</small></div>
+                                    </div>
+                                }
+                                else {
+                                    <div class="p-3 rounded-3 bg-secondary bg-opacity-25 border border-secondary text-white d-flex align-items-center">
+                                        <i class="fas fa-cloud fa-2x me-3"></i>
+                                        <div><h6 class="mb-0 fw-bold">Hava Gözlemcisi</h6><small>Her türlü havaya uyum sağlıyorsun.</small></div>
+                                    </div>
+                                }
+
+                                <div class="p-3 rounded-3 bg-success bg-opacity-25 border border-success text-white d-flex align-items-center">
+                                    <i class="fas fa-music fa-2x me-3 text-success"></i>
+                                    <div><h6 class="mb-0 fw-bold">Müzik Tutkunu</h6><small>Mooduna göre müzik dinlemeyi seviyorsun.</small></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2"><i class="fas fa-cog me-2"></i>Hesap Bilgileri</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-white-50 small mb-1">Kullanıcı Adı</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control bg-black border-secondary text-white" value="@Model.Username" readonly>
+                                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editNameModal"><i class="fas fa-pen"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-white-50 small mb-1">Kayıt Tarihi</label>
+                            <input type="text" class="form-control bg-black border-secondary text-white" value="@Model.CreatedAt.ToString("dd MMMM yyyy")" readonly>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <div class="bg-black bg-opacity-25 p-3 rounded-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong class="d-block text-white">Arkadaşlık Kodu</strong>
+                                    <small class="text-white-50">Arkadaşların seni bu kodla ekleyebilir.</small>
+                                </div>
+                                <button class="btn btn-outline-info btn-sm rounded-pill px-3" onclick="copyCode('@Model.FriendCode')">
+                                    <i class="fas fa-copy me-1"></i> @Model.FriendCode
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editNameModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Kullanıcı Adını Değiştir</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateUsername" method="post">
+                <div class="modal-body">
+                    <label class="form-label">Yeni Kullanıcı Adı</label>
+                    <input type="text" name="newUsername" class="form-control bg-black text-white border-secondary" required>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editPhotoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Profil Fotoğrafı</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdatePhoto" method="post">
+                <div class="modal-body">
+                    <label class="form-label">Fotoğraf URL'si (Örn: Imgur, Google Photos)</label>
+                    <input type="url" name="photoUrl" class="form-control bg-black text-white border-secondary" placeholder="https://..." required>
+                    <small class="text-white-50">Veya avatar kullanmak için boş bırakıp Rastgele Avatar butonuna bas.</small>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <a asp-action="UpdatePhotoRandom" class="btn btn-outline-warning">🎲 Rastgele Avatar</a>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Kopyalama Fonksiyonu
+    function copyCode(code) {
+        navigator.clipboard.writeText(code);
+        alert("Kod kopyalandı: " + code);
+    }
+
+    // Grafik
+    var ctx = document.getElementById('moodChart').getContext('2d');
+    var moodChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: @Html.Raw(ViewBag.MoodLabels ?? "[]"),
+            datasets: [{
+                data: @Html.Raw(ViewBag.MoodData ?? "[]"),
+                backgroundColor: ['#f1c40f', '#e74c3c', '#3498db', '#9b59b6', '#2ecc71'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right', labels: { color: 'white', font: { size: 12 } } }
+            }
+        }
+    });
+</script>

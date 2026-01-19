@@ -1,0 +1,401 @@
+﻿@using Microsoft.AspNetCore.Http
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - HavamaGore</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        /* --- SOHBET DRAWER TASARIMI --- */
+        .chat-drawer {
+            border-left: 1px solid rgba(255,255,255,0.1);
+            background: rgba(18, 18, 18, 0.98) !important;
+        }
+        
+        .friend-item {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .friend-item:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        /* Mesaj Balonları */
+        .chat-body {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        .chat-bubble.me {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0d6efd, #0043a8);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.other {
+            align-self: flex-start;
+            background: #2c2c2c;
+            color: #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+        .msg-time {
+            font-size: 0.65rem; opacity: 0.7; margin-top: 4px; display: block; text-align: right;
+        }
+
+        /* Bildirim Animasyonu */
+        .badge-pulse { animation: pulse-red 2s infinite; }
+        
+        @@keyframes pulse-red {
+            0% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        
+        @@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Butonun aktif (yeşil) hali için stil */
+        .ambient-active {
+            background-color: #198754 !important; /* Yeşil */
+            border-color: #198754 !important;
+            box-shadow: 0 0 15px rgba(25, 135, 84, 0.5) !important;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    
+    <audio id="ambient-audio" loop>
+        <source src="~/sounds/lofi-beat.mp3" type="audio/mpeg">
+    </audio>
+
+    <nav class="navbar navbar-expand-lg fixed-top navbar-dark" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" asp-controller="Home" asp-action="Index">
+                <i class="fas fa-cloud-showers-heavy me-2"></i>HavamaGore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link text-white fw-bold mx-2" asp-controller="Home" asp-action="Index">Ana Sayfa</a></li>
+                    <li class="nav-item"><a class="nav-link text-white fw-bold mx-2" asp-controller="Library" asp-action="Index">Kütüphanem</a></li>
+                    <li class="nav-item"><a class="nav-link text-white fw-bold mx-2" asp-controller="Social" asp-action="Index">🌍 Keşfet</a></li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    @if (Context.Session.GetString("Username") != null)
+                    {
+                        var username = Context.Session.GetString("Username");
+                        <span class="text-white small d-none d-md-block">Merhaba, <strong>@username</strong></span>
+                        <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-light rounded-circle shadow-sm p-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" title="Profilim"><i class="fas fa-user"></i></a>
+                        <a asp-controller="Account" asp-action="Logout" class="btn btn-danger rounded-pill px-3 btn-sm fw-bold">Çıkış</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-light rounded-pill px-4">Giriş Yap</a>
+                        <a asp-controller="Account" asp-action="Register" class="btn btn-primary rounded-pill px-4">Kayıt Ol</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content flex-grow-1">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer mt-auto py-4" style="background: rgba(0,0,0,0.9);">
+        <div class="container text-center text-white-50">
+            <h5 class="fw-bold text-white mb-0">HavamaGore</h5>
+            <small>Havanın ritmine uygun içerikler.</small>
+            <p class="small mt-3 mb-0">&copy; 2025 - Tüm Hakları Saklıdır.</p>
+        </div>
+    </footer>
+
+    <button id="ambient-toggle" 
+            class="btn btn-dark" 
+            onclick="toggleAmbient()"
+            style="
+                position: fixed; 
+                bottom: 20px; 
+                left: 20px; 
+                z-index: 9999; 
+                
+                /* KÜÇÜLTME AYARLARI */
+                width: auto !important;          /* Genişliği serbest bırak */
+                max-width: fit-content;          /* Sadece içerik kadar genişle */
+                display: inline-flex !important; /* Satır içi eleman gibi davran */
+                align-items: center; 
+                gap: 10px; 
+                
+                /* GÖRÜNÜM */
+                border-radius: 50px; 
+                padding: 10px 25px; 
+                border: 1px solid rgba(255,255,255,0.2); 
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            ">
+        <i class="fas fa-headphones"></i>
+        <span>Mod: Kapalı</span>
+    </button>
+
+    @if (Context.Session.GetString("Username") != null)
+    {
+        <div class="position-fixed bottom-0 end-0 m-4" style="z-index: 1050;">
+            <button class="btn btn-light rounded-pill shadow-lg py-2 px-4 fw-bold position-relative" 
+                    type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas">
+                <i class="fab fa-facebook-messenger me-2 text-primary"></i> Sohbetler
+                <span id="globalMsgBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light badge-pulse" style="display:none;">0</span>
+            </button>
+        </div>
+
+        <div class="offcanvas offcanvas-end text-white chat-drawer shadow-lg" tabindex="-1" id="chatOffcanvas">
+            
+            <div class="offcanvas-header border-bottom border-secondary bg-black bg-opacity-25">
+                <div class="d-flex align-items-center">
+                    <button id="backToFriendsBtn" class="btn btn-sm btn-outline-light me-3 rounded-circle border-0" style="display:none;" onclick="showFriendList()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h5 class="offcanvas-title fw-bold mb-0" id="chatDrawerTitle">💬 Sohbetler</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+            </div>
+
+            <div class="offcanvas-body p-0 d-flex flex-column" style="background: #121212;">
+                
+                <div id="drawerFriendList" class="p-0 h-100 overflow-auto">
+                    <div class="text-center text-white-50 my-5" id="loadingFriends">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted small">Bağlantı kuruluyor...</p>
+                    </div>
+                    <div id="friendsContainer"></div>
+                </div>
+
+                <div id="drawerChatArea" class="d-flex flex-column h-100" style="display:none !important;">
+                    <div id="drawerMessages" class="flex-grow-1 p-3 chat-body" style="overflow-y: auto; background: #0f0f0f;"></div>
+
+                    <div class="p-3 border-top border-secondary bg-black">
+                        <div class="input-group">
+                            <input type="text" id="drawerInput" class="form-control rounded-pill bg-dark text-white border-secondary" placeholder="Mesaj yaz..." autocomplete="off">
+                            <button class="btn btn-primary rounded-circle ms-2" onclick="sendDrawerMessage()">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            let currentChatUser = "";
+            let myUsernameForChat = '@Context.Session.GetString("Username")'; 
+
+            document.addEventListener("DOMContentLoaded", function() {
+                checkNotifications(); 
+                setInterval(checkNotifications, 5000); 
+            });
+
+            // --- AMBIENT MODE SCRIPT ---
+            document.addEventListener("DOMContentLoaded", function() {
+                const isAmbientOn = localStorage.getItem("ambientMode") === "on";
+                if (isAmbientOn) {
+                    toggleAmbient(true); 
+                }
+            });
+
+            function toggleAmbient(forceOn = false) {
+                const audio = document.getElementById("ambient-audio");
+                const btn = document.getElementById("ambient-toggle");
+                const btnText = btn.querySelector("span");
+
+                // Class kontrolü (ambient-active)
+                const isActive = btn.classList.contains("ambient-active");
+
+                if (forceOn || !isActive) {
+                    audio.volume = 0.4;
+                    var playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => { console.log("Otomatik oynatma engellendi."); });
+                    }
+                    btn.classList.add("ambient-active"); // Yeşil yap
+                    btnText.innerText = "Mod: Açık";
+                    localStorage.setItem("ambientMode", "on");
+                } 
+                else {
+                    audio.pause();
+                    btn.classList.remove("ambient-active"); // Normale dön
+                    btnText.innerText = "Mod: Kapalı";
+                    localStorage.setItem("ambientMode", "off");
+                }
+            }
+            // ---------------------------
+
+            function checkNotifications() {
+                fetch('/Chat/GetMyFriendsAPI') 
+                    .then(res => { if(res.ok) return res.json(); return []; })
+                    .then(data => {
+                        let totalUnread = 0;
+                        data.forEach(u => totalUnread += (u.unreadCount || 0));
+                        const badge = document.getElementById('globalMsgBadge');
+                        if(totalUnread > 0) {
+                            badge.style.display = 'inline-block';
+                            badge.innerText = totalUnread > 9 ? '9+' : totalUnread;
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.log("Bildirim kontrolü hatası (önemsiz)"));
+            }
+
+            const chatOffcanvas = document.getElementById('chatOffcanvas');
+            if(chatOffcanvas){
+                chatOffcanvas.addEventListener('show.bs.offcanvas', function () {
+                    if(currentChatUser === "") loadDrawerFriends(true);
+                });
+            }
+
+            function loadDrawerFriends(showSpinner) {
+                const loader = document.getElementById('loadingFriends');
+                if(showSpinner && loader) {
+                    showFriendList();
+                    loader.style.display = 'block';
+                    document.getElementById('friendsContainer').innerHTML = "";
+                }
+
+                fetch('/Chat/GetMyFriendsAPI')
+                    .then(res => { if (!res.ok) throw new Error("Veri hatası"); return res.json(); })
+                    .then(data => {
+                        if(loader) loader.style.display = 'none';
+                        const container = document.getElementById('friendsContainer');
+                        container.innerHTML = "";
+                        if(data.length === 0) {
+                            container.innerHTML = "<div class='text-center text-white-50 mt-5 p-3'>Henüz kimse yok. <br>Keşfet'ten arkadaş ekle! 🌍</div>";
+                            return;
+                        }
+                        data.forEach(user => {
+                            let pic = (user.profilePicture && user.profilePicture !== "null") ? user.profilePicture : `https://ui-avatars.com/api/?name=${user.username}&background=random`;
+                            let badgeHtml = (user.unreadCount > 0) ? `<span class="badge bg-primary rounded-pill ms-2 shadow">${user.unreadCount}</span>` : "";
+                            container.innerHTML += `
+                                <div class="d-flex align-items-center p-3 border-bottom border-secondary border-opacity-25 friend-item" onclick="openChatDrawer('${user.username}')">
+                                    <img src="${pic}" class="rounded-circle me-3 border border-secondary" width="50" height="50" style="object-fit:cover;">
+                                    <div class="flex-grow-1"><h6 class="mb-0 fw-bold text-white">${user.username}</h6><small class="text-white-50">Sohbeti aç</small></div>
+                                    ${badgeHtml} <i class="fas fa-chevron-right text-white-50 ms-2"></i>
+                                </div>
+                            `;
+                        });
+                    })
+                    .catch(err => {
+                        if(loader) loader.style.display = 'none';
+                        document.getElementById('friendsContainer').innerHTML = "<div class='text-center text-danger mt-5 p-3 small'>Bağlantı hatası.<br>Tekrar deneyin.</div>";
+                    });
+            }
+
+            function openChatDrawer(username) {
+                currentChatUser = username;
+                document.getElementById('drawerFriendList').style.display = 'none';
+                document.getElementById('drawerChatArea').style.setProperty('display', 'flex', 'important');
+                document.getElementById('backToFriendsBtn').style.display = 'inline-block';
+                document.getElementById('chatDrawerTitle').innerText = username;
+                var bsOffcanvas = bootstrap.Offcanvas.getInstance(chatOffcanvas);
+                if (!bsOffcanvas) { new bootstrap.Offcanvas(chatOffcanvas).show(); } else { bsOffcanvas.show(); }
+                loadDrawerMessages();
+                fetch('/Chat/MarkMessagesAsReadAPI?sender=' + username, { method: 'POST' }).then(res => res.json()).then(data => { if (data.success) { checkNotifications(); const friendItems = document.querySelectorAll('.friend-item'); friendItems.forEach(item => { if(item.innerText.includes(username)) { const badge = item.querySelector('.badge'); if(badge) badge.remove(); } }); } });
+            }
+
+            function loadDrawerMessages() {
+                const msgContainer = document.getElementById('drawerMessages');
+                msgContainer.innerHTML = '<div class="text-center mt-5"><div class="spinner-border text-primary text-sm"></div></div>';
+                fetch('/Chat/GetMessages?username=' + currentChatUser).then(res => res.json()).then(msgs => {
+                    msgContainer.innerHTML = "";
+                    if(msgs.length === 0) {
+                        msgContainer.innerHTML = '<div class="text-center text-muted mt-5 opacity-50"><i class="far fa-comments fa-3x mb-2"></i><p>Sohbeti başlat!</p></div>';
+                    } else {
+                        msgs.forEach(m => {
+                            const isMe = m.senderUsername === myUsernameForChat;
+                            const time = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            msgContainer.innerHTML += `<div class="chat-bubble ${isMe ? 'me' : 'other'}">${m.content}<span class="msg-time">${time}</span></div>`;
+                        });
+                        msgContainer.scrollTop = msgContainer.scrollHeight;
+                    }
+                });
+            }
+        
+            function sendDrawerMessage() {
+                const input = document.getElementById('drawerInput');
+                const txt = input.value;
+                if(!txt.trim()) return;
+                fetch('/Chat/SendMessage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ receiverUsername: currentChatUser, content: txt }) })
+                .then(res => res.json()).then(d => { if(d.success) { input.value = ""; loadDrawerMessages(); } });
+            }
+            
+            const dInput = document.getElementById("drawerInput");
+            if(dInput){ dInput.addEventListener("keypress", function(e) { if(e.key==="Enter") sendDrawerMessage(); }); }
+            window.openChatDrawer = openChatDrawer;
+
+            function showFriendList() {
+                currentChatUser = "";
+                document.getElementById('drawerFriendList').style.display = 'block';
+                document.getElementById('drawerChatArea').style.setProperty('display', 'none', 'important');
+                document.getElementById('backToFriendsBtn').style.display = 'none';
+                document.getElementById('chatDrawerTitle').innerText = "💬 Sohbetler";
+                loadDrawerFriends(false);
+            }
+        </script>
+    }
+    else 
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const isAmbientOn = localStorage.getItem("ambientMode") === "on";
+                if (isAmbientOn) {
+                    toggleAmbient(true); 
+                }
+            });
+
+            function toggleAmbient(forceOn = false) {
+                const audio = document.getElementById("ambient-audio");
+                const btn = document.getElementById("ambient-toggle");
+                const btnText = btn.querySelector("span");
+
+                const isActive = btn.classList.contains("ambient-active");
+
+                if (forceOn || !isActive) {
+                    audio.volume = 0.4;
+                    var playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {});
+                    }
+                    btn.classList.add("ambient-active");
+                    btnText.innerText = "Mod: Açık";
+                    localStorage.setItem("ambientMode", "on");
+                } 
+                else {
+                    audio.pause();
+                    btn.classList.remove("ambient-active");
+                    btnText.innerText = "Mod: Kapalı";
+                    localStorage.setItem("ambientMode", "off");
+                }
+            }
+        </script>
+    }
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

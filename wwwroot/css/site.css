@@ -1,0 +1,208 @@
+:root {
+    /* --- VARSAYILAN ORMAN TEMASI --- */
+    --forest-light: #608392;
+    --forest-dark: #1B282C;
+    --text-color: #fff;
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+
+    /* --- HAVA RENKLERİ --- */
+    --fog-1: #2F3C38;
+    --fog-2: #56645F;
+    --fog-3: #888C85;
+    --fog-4: #3b3731;
+
+    --sun-1: #FF8C00;
+    --sun-2: #FFD700;
+    --sun-3: #f6d365;
+    --sun-4: #fda085;
+
+    --rain-bg: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+
+    --snow-bg: linear-gradient(180deg, #e0eafc, #cfdef3);
+}
+
+/* ------------------ GENEL ------------------ */
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-color);
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #141e30, #243b55);
+    transition: background 1s ease, filter 1s ease;
+}
+
+/* Ambient açıkken */
+body.ambient-on {
+    filter: saturate(0.9) brightness(0.95);
+}
+
+/* ------------------ WEATHER THEMES ------------------ */
+
+.weather-foggy {
+    background: linear-gradient(180deg, var(--fog-1), var(--fog-2), var(--fog-3)) !important;
+    color: #e0e0e0;
+}
+
+.weather-sunny {
+    background: linear-gradient(180deg, var(--sun-1), var(--sun-2), var(--sun-3)) !important;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.weather-rainy {
+    background: var(--rain-bg) !important;
+}
+
+.weather-snow {
+    background: var(--snow-bg) !important;
+    color: #333;
+}
+
+.weather-snow h1,
+.weather-snow h2,
+.weather-snow h3,
+.weather-snow p {
+    color: #333 !important;
+    text-shadow: none !important;
+}
+
+/* ------------------ GLASS UI ------------------ */
+
+.navbar-glass,
+.footer-glass {
+    background: rgba(20, 30, 48, 0.6);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    border: var(--glass-border);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    color: #fff;
+}
+
+/* ------------------ MOVIE SCROLL ------------------ */
+
+.movie-scroll-container {
+    display: flex;
+    gap: 25px;
+    padding: 20px 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.movie-scroll-container::-webkit-scrollbar { display: none; }
+
+.movie-card-modern {
+    min-width: 280px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+.movie-card-modern:hover {
+    transform: scale(1.05);
+}
+
+/* ------------------ LINKS & BUTTONS ------------------ */
+
+a {
+    color: #e6e6e6;
+    transition: 0.3s;
+}
+a:hover { color: #fff; }
+
+.btn-primary {
+    background-color: var(--forest-light);
+    border: none;
+    font-weight: 600;
+}
+.btn-primary:hover {
+    background-color: #7da5b5;
+}
+
+/* ------------------ AMBIENT MODE ------------------ */
+
+#ambient-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 10px 20px;
+    font-weight: bold;
+    border-radius: 30px;
+}
+
+.ambient-btn-active {
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.6);
+}
+
+/* Ambient Overlay */
+#ambient-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+#ambient-overlay.active {
+    opacity: 1;
+    background:
+        radial-gradient(circle at top,
+        rgba(255,255,255,0.05),
+        rgba(0,0,0,0.4)),
+        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjIiLz48L3N2Zz4=");
+    background-size: 600px 600px;
+    animation: rainFall 25s linear infinite;
+}
+
+@keyframes rainFall {
+    from { background-position: 0 0; }
+    to   { background-position: -100px 500px; }
+}
+
+
+/* ------------------ KART ANİMASYONLARI (YENİ) ------------------ */
+
+/* Senin Gönderdiğin Animasyon (Biraz yumuşattım) */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.9); /* 0.5 çok küçüktü, 0.9 daha kibar */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Kartlara Animasyonu Tanımla */
+.movie-card-modern {
+    /* Animasyon ayarları */
+    animation: fadeUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    opacity: 0; /* Başlangıçta gizli olsun ki animasyonla gelsin */
+}
+
+/* --- DALGA EFEKTİ (STAGGER) --- */
+/* İlk 10 kart için gecikme ekliyoruz, böylece sırayla gelirler */
+
+.movie-scroll-container .movie-card-modern:nth-child(1) { animation-delay: 0.1s; }
+.movie-scroll-container .movie-card-modern:nth-child(2) { animation-delay: 0.2s; }
+.movie-scroll-container .movie-card-modern:nth-child(3) { animation-delay: 0.3s; }
+.movie-scroll-container .movie-card-modern:nth-child(4) { animation-delay: 0.4s; }
+.movie-scroll-container .movie-card-modern:nth-child(5) { animation-delay: 0.5s; }
+.movie-scroll-container .movie-card-modern:nth-child(6) { animation-delay: 0.6s; }
+.movie-scroll-container .movie-card-modern:nth-child(7) { animation-delay: 0.7s; }
+.movie-scroll-container .movie-card-modern:nth-child(8) { animation-delay: 0.8s; }
+.movie-scroll-container .movie-card-modern:nth-child(9) { animation-delay: 0.9s; }
+.movie-scroll-container .movie-card-modern:nth-child(10) { animation-delay: 1.0s; }
+
+/* Eğer carousel (Hero) içindeki büyük resme de efekt istersen: */
+.carousel-item .row {
+    animation: fadeUp 1s ease-out forwards;
+}
